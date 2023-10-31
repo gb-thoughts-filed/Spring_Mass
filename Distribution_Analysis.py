@@ -15,6 +15,7 @@ def histogram_plot(data, rounded_range, interval):
 
 if __name__ == "__main__":
     sample_num_plate, num_of_counts_plate = np.loadtxt \
-        ("SpringMass_posn_uncertainty_Oct31_Junyu_Gabrielle", skiprows=2,
+        ("SpringMass_posn_uncertainty_Oct31_Junyu_Gabrielle.csv", skiprows=2,
          unpack=True, usecols=(0, 1))
-    histogram_plot(num_of_counts_plate, )
+    histogram_plot(num_of_counts_plate, (15.380, 15.398), 0.001)
+    plt.show()
