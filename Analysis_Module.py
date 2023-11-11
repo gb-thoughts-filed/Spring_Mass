@@ -129,4 +129,3 @@ def error_prop_addition(uncertainty_list):
     for uncertainty in uncertainty_list:
         square_sum += uncertainty ** 2
     return np.sqrt(square_sum)
-
