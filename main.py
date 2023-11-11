@@ -3,7 +3,7 @@ import numpy
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 import numpy as np
-import Analysis_Module
+from Analysis_Module import *
 
 
 def initial_conditions(file: str):
@@ -60,6 +60,7 @@ def symplectic_time_step_velocity(y_init: float, v_init: float, ang_freq_osc: fl
 def forward_euler_array(y_init: float, v_init: float, ang_freq_osc: float,
                         disp_t: float, t_not: float,
                         t_total: float, mass: float, spring_const: float):
+    # TODO: add uncertainties
     t_pos_vel_energ_array = []
     times = list(time_array(disp_t, t_not, t_total))
     print(times)
@@ -89,28 +90,42 @@ def forward_euler_array(y_init: float, v_init: float, ang_freq_osc: float,
 
 def symplectic_euler_array(y_init: float, v_init: float, ang_freq_osc: float,
                            disp_t: float, t_not: float,
-                           t_total: float, mass: float, spring_const: float):
+                           t_total: float, mass: float, spring_const: float, y_err, mass_err, k_err):
     t_pos_vel_energ_array = []
+    t_pos_vel_energ_uncertainty_array = []
     times = list(time_array(disp_t, t_not, t_total))
 
     E_init = (1 / 2) * spring_const * y_init ** 2
 
+    v_err = 0
     init_parameters = [times[0], y_init, v_init, E_init]
 
     t_pos_vel_energ_array.append(init_parameters)
+    t_pos_vel_energ_uncertainty_array.append([0, y_err, v_err, 0])
     y_plus_1 = y_init
     v_plus_1 = v_init
 
     for i in np.arange(len(times)):
+        y_err = error_prop_addition([y_err, disp_t * v_err])
         y_plus_1 = time_step_posn(y_plus_1, v_plus_1,
                                   disp_t)
+        v_err = error_prop_addition([v_err, error_prop_multiplication(disp_t * (ang_freq_osc ** 2) * y_plus_1,
+                                                                      [[mass, mass_err], [spring_const, k_err],
+                                                                       [y_plus_1, y_err]])])
         v_plus_1 = symplectic_time_step_velocity(y_plus_1,
                                                  v_plus_1, ang_freq_osc,
                                                  disp_t)
         E = (1 / 2) * mass * v_plus_1 ** 2 + (1 / 2) * spring_const * y_plus_1 ** 2
+        e_err = error_prop_addition([error_prop_multiplication((1 / 2) * mass * v_plus_1 ** 2,
+                                                               [[mass, mass_err], [v_plus_1, v_err],
+                                                                [v_plus_1, v_err]]),
+                                     error_prop_multiplication((1 / 2) * spring_const * y_plus_1 ** 2,
+                                                               [[spring_const, k_err], [y_plus_1, y_err],
+                                                                [y_plus_1, y_err]])])
         t_pos_vel_energ_array.append([times[i] + disp_t, y_plus_1, v_plus_1, E])
+        t_pos_vel_energ_uncertainty_array.append([0, y_err, v_err, e_err])
 
-    return t_pos_vel_energ_array
+    return t_pos_vel_energ_array, t_pos_vel_energ_uncertainty_array
 
 
 def quick_plot(x: list, y: list):
@@ -138,6 +153,10 @@ if __name__ == '__main__':
     t_total = 10
     period_nd = 0.68
     mass_nd = 200.2
+    # TODO: check the errors and calculate k_err
+    y_error = 0.000001
+    m_error = 0.05 / 1000
+    k_error = 0
     k_nd = spring_const_calc(period_nd, mass_nd)
     print(k_nd)
     angular_freq_osc_nd = np.sqrt(k_nd / (mass_nd / 1000))
@@ -154,9 +173,9 @@ if __name__ == '__main__':
                                                       disp_t, t_not,
                                                       t_total, mass_nd / 1000, k_nd)
 
-    symplectic_euler_mass_nd_array = symplectic_euler_array(y_0 / 100, 0, angular_freq_osc_nd,
-                                                            disp_t, t_not,
-                                                            t_total, mass_nd / 1000, k_nd)
+    symplectic_euler_mass_nd_array, symplectic_euler_uncertainty_array = \
+        symplectic_euler_array(y_0 / 100, 0, angular_freq_osc_nd, disp_t, t_not, t_total, mass_nd / 1000, k_nd, y_error,
+                               m_error, k_error)
 
     # print(generated_mass_nd_array)
 
@@ -174,7 +193,7 @@ if __name__ == '__main__':
     fe_Es = column_extractor(3, forward_euler_mass_nd_array, t_i)
     # for i in np.arange(len(t_i)):
     #    fe_Es.append(forward_euler_mass_nd_array[i][3])
-
+    print(symplectic_euler_uncertainty_array[:100])
     sy_ys = column_extractor(1, symplectic_euler_mass_nd_array, t_i)
     sy_vs = column_extractor(2, symplectic_euler_mass_nd_array, t_i)
     sy_Es = column_extractor(3, symplectic_euler_mass_nd_array, t_i)
