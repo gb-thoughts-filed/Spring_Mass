@@ -24,13 +24,19 @@ def initial_plot(file: str):
     plt.show()
 
 
-def spring_const_calc(period: float, mass_grams: float):
+def spring_const_calc(period: float, mass_grams: float,
+                      mass_error: float, peri_error: float):
     m = mass_grams / 1000
+    m_err = mass_error / 1000
     twopi = 2 * np.pi
     denom = (period / twopi) ** 2
     k = m / denom
 
-    return k
+    period_square_error = error_prop_multiplication(period**2, [[period, peri_error], [period, peri_error]])
+    denom_error = (1/twopi**2)*period_square_error
+    k_err = error_prop_multiplication(k, [[m, m_err], [denom, denom_error]])
+
+    return k, k_err
 
 
 def time_array(disp_t: float, t_not: float, t_total: float):
@@ -61,6 +67,8 @@ def forward_euler_array(y_init: float, v_init: float, ang_freq_osc: float,
                         disp_t: float, t_not: float,
                         t_total: float, mass: float, spring_const: float):
     # TODO: add uncertainties
+    mass = mass/1000
+    y_init = y_init/100
     t_pos_vel_energ_array = []
     times = list(time_array(disp_t, t_not, t_total))
     print(times)
@@ -94,7 +102,8 @@ def symplectic_euler_array(y_init: float, v_init: float, ang_freq_osc: float,
     t_pos_vel_energ_array = []
     t_pos_vel_energ_uncertainty_array = []
     times = list(time_array(disp_t, t_not, t_total))
-
+    mass = mass/1000
+    y_init = y_init/100
     E_init = (1 / 2) * spring_const * y_init ** 2
 
     v_err = 0
@@ -152,13 +161,14 @@ if __name__ == '__main__':
     t_not = 0
     t_total = 10
     period_nd = 0.68
+    period_error = 0.0005
     mass_nd = 200.2
     # TODO: check the errors and calculate k_err
     y_error = 0.000001
-    m_error = 0.05 / 1000
-    k_error = 0
-    k_nd = spring_const_calc(period_nd, mass_nd)
-    print(k_nd)
+    m_error = 0.05
+
+    k_nd, k_error = spring_const_calc(period_nd, mass_nd, m_error, period_error)
+    print(k_nd, k_error)
     angular_freq_osc_nd = np.sqrt(k_nd / (mass_nd / 1000))
 
     t_i = time_array(disp_t, t_not, t_total)
@@ -171,10 +181,10 @@ if __name__ == '__main__':
 
     forward_euler_mass_nd_array = forward_euler_array(y_0 / 100, 0, angular_freq_osc_nd,
                                                       disp_t, t_not,
-                                                      t_total, mass_nd / 1000, k_nd)
+                                                      t_total, mass_nd, k_nd)
 
     symplectic_euler_mass_nd_array, symplectic_euler_uncertainty_array = \
-        symplectic_euler_array(y_0 / 100, 0, angular_freq_osc_nd, disp_t, t_not, t_total, mass_nd / 1000, k_nd, y_error,
+        symplectic_euler_array(y_0 / 100, 0, angular_freq_osc_nd, disp_t, t_not, t_total, mass_nd, k_nd, y_error,
                                m_error, k_error)
 
     # print(generated_mass_nd_array)
