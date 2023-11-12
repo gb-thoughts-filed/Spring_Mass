@@ -1,5 +1,5 @@
 import inspect
-from typing import Iterable, Union
+from typing import Iterable, Union, List
 import numpy as np
 from matplotlib import pyplot as plt
 from numpy import ndarray
@@ -104,3 +104,28 @@ def round_sig_fig(x: Union[int, float], sig_figs: int) -> any:
     """
     sig_figs -= int((np.ceil(np.log10(abs(x)))))
     return np.round(x, sig_figs)
+
+
+def error_prop_multiplication(product, variable_list):
+    """
+    Calculate the uncertainty through multiplication
+    :param product: product of the variables
+    :param variable_list: [[variable value],[variable uncertainty]]
+    :return: uncertainty of product
+    """
+    ratio_sum = 0
+    for variable in variable_list:
+        ratio_sum += (variable[1] / variable[0]) ** 2
+    return product * np.sqrt(ratio_sum)
+
+
+def error_prop_addition(uncertainty_list):
+    """
+    Calculate the uncertainty through addition
+    :param uncertainty_list: [uncertainty]
+    :return: uncertainty of sum
+    """
+    square_sum = 0
+    for uncertainty in uncertainty_list:
+        square_sum += uncertainty ** 2
+    return np.sqrt(square_sum)
