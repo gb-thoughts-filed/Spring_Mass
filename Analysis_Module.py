@@ -36,9 +36,9 @@ def characterize_fit(y: Union[ndarray, Iterable, int, float], prediction: Union[
     return np.sum(((y - prediction) / uncertainty) ** 2) / (len(y) - param_num)
 
 
-def plot_best_fit_x_vs_y(x: Union[ndarray, Iterable, int, float], x_error: Union[ndarray, Iterable, int, float],
-                         y: Union[ndarray, Iterable, int, float], y_error: Union[ndarray, Iterable, int, float],
-                         graph_name: str, model: callable):
+def plot_x_vs_y(x: Union[ndarray, Iterable, int, float], x_error: Union[ndarray, Iterable, int, float],
+                y: Union[ndarray, Iterable, int, float], y_error: Union[ndarray, Iterable, int, float],
+                graph_name: str, model: Union[callable, None]):
     """
     Plot the data with error bar and the best-fit line of the predicted model.
     :param x: x
@@ -52,11 +52,11 @@ def plot_best_fit_x_vs_y(x: Union[ndarray, Iterable, int, float], x_error: Union
     plt.errorbar(x, y, xerr=x_error,
                  yerr=y_error, ls='', lw=1, marker='o', markersize=2,
                  label="{} data with error bar".format(graph_name))
-    popt, pcov = curve_fit(model, x, y, sigma=y_error,
-                           absolute_sigma=True)
-    prediction = model(x, *popt)
-    plt.plot(x, prediction, label="{} best fit line".format(graph_name))
-    return popt, pcov, prediction
+    if type(model) == callable:
+        popt, pcov = curve_fit(model, x, y, sigma=y_error, absolute_sigma=True)
+        prediction = model(x, *popt)
+        plt.plot(x, prediction, label="{} best fit line".format(graph_name))
+        return popt, pcov, prediction
 
 
 def plot_residual(x: Union[ndarray, Iterable, int, float], y: Union[ndarray, Iterable, int, float],
