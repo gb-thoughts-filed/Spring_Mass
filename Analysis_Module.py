@@ -63,7 +63,7 @@ def plot_x_vs_y(x: Union[ndarray, Iterable, int, float], x_error: Union[ndarray,
 
 def plot_residual(x: Union[ndarray, Iterable, int, float], y: Union[ndarray, Iterable, int, float],
                   uncertainty: Union[ndarray, Iterable, int, float], prediction: Union[ndarray, Iterable, int, float],
-                  graph_name: str, model: Union[callable, None]):
+                  graph_name: str, model: Union[callable, None, int]):
     """
     Plot the residual based on data and the prediction.
     :param model: the theoretical model
@@ -80,7 +80,11 @@ def plot_residual(x: Union[ndarray, Iterable, int, float], y: Union[ndarray, Ite
     plt.plot(x, np.zeros_like(y), "g-", label="0 line")
     plt.legend()
     if model is not None:
-        chi_sq = characterize_fit(y, prediction, uncertainty, len(inspect.signature(model).parameters) - 1)
+        if type(model) == int:
+            param_num = model
+        else:
+            param_num = len(inspect.signature(model).parameters) - 1
+        chi_sq = characterize_fit(y, prediction, uncertainty, param_num)
         return chi_sq
 
 
