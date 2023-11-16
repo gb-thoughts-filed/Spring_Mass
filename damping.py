@@ -100,7 +100,7 @@ if __name__ == "__main__":
     plt.rcParams.update({'font.size': 13})
     # TODO: check params
     period = 0.7205  # second
-    mass = 210  # grams
+    mass = 217.4  # grams
     damping_factor = 0.034
     balanced_position = 0.233
     y_error = 0.293 / 100
@@ -134,5 +134,8 @@ if __name__ == "__main__":
                                          "best fit",
                                          wave_y)
     plt.legend()
+    plt.figure("data_energy")
+    plot_directional_graph(time_list, energy_calculation(y_data_list, v_data_list, spring_constant, mass),"energy data, 0")
+
     print(popt)
     plt.show()
