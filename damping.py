@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from main import *
 
@@ -35,31 +36,75 @@ def predict_damping_motion_symplectic_euler(y_init, v_init, k, m, damping_coeffi
     return t_y_v_e_prediction
 
 
-def damped_plots(t_list, y_list, v_list, e_list, set_name):
-    plt.figure("position")
-    plt.xlabel("time")
-    plt.ylabel("position")
-    plot_x_vs_y(t_list, 0, y_list, 0, set_name, None)
+def damped_plots(t_list, y_list, v_list, e_list, y_data, y_err, set_name):
+    plt.figure("position, {}".format(set_name))
+    plt.title(
+        "Harmonic Oscillation with Dampener Time(s) vs. Position of Mass (m) Prediction of {} Method and Raw Data "
+        "Recorded".format(
+            set_name), wrap=True)
+    plt.xlabel("time(s)")
+    plt.ylabel("position(m)")
+    plot_x_vs_y(t_list, 0, y_data, y_err, "raw data", None)
+    plot_directional_graph(t_list, y_list, set_name, 0)
+    plt.legend()
+    plt.tight_layout(pad=0.8, w_pad=0.5, h_pad=2)
+    plt.savefig("Figs/position, {}".format(set_name), dpi=600)
+
     plt.figure("velocity, {}".format(set_name))
-    plt.xlabel("time")
-    plt.ylabel("velocity")
-    plot_x_vs_y(t_list, 0, v_list, 0, set_name, None)
+    plt.title(
+        "Harmonic Oscillation with Dampener Time(s) vs. velocity (m/s) Prediction of {} Method".format(
+            set_name), wrap=True)
+    plt.xlabel("time(s)")
+    plt.ylabel("velocity(m/s)")
+    plot_directional_graph(t_list, v_list, set_name, 0)
+    plt.legend()
+    plt.savefig("Figs/velocity, {}".format(set_name), dpi=600)
+
     plt.figure("position vs velocity, {}".format(set_name))
-    plt.xlabel("velocity")
-    plt.ylabel("position")
-    plot_x_vs_y(y_list, 0, v_list, 0, set_name, None)
+    plt.gca().set_box_aspect(aspect=1)
+    plt.title(
+        "Harmonic Oscillation with Dampener position(m) vs. velocity (m/s) Prediction of {} Method".format(
+            set_name), wrap=True)
+    plt.xlabel("velocity(m/s)")
+    plt.ylabel("position(m)")
+    plot_directional_graph(y_list, v_list, "position vs velocity {}".format(set_name), 6)
+    plt.savefig("Figs/position vs velocity, {}".format(set_name), dpi=600)
+
     plt.figure("energy, {}".format(set_name))
-    plt.xlabel("time")
-    plt.ylabel("energy")
-    plot_x_vs_y(t_list, 0, e_list, 0, set_name, None)
+    plt.title(
+        "Harmonic Oscillation with Dampener Energy(J) vs. velocity (m/s) Prediction of {} Method".format(
+            set_name), wrap=True)
+    plt.xlabel("time(s)")
+    plt.ylabel("energy(J)")
+    plot_directional_graph(t_list, e_list, set_name, 0)
+    plt.savefig("Figs/energy, {}".format(set_name), dpi=600)
+
+    plt.figure("residual, {}".format(set_name))
+    plt.title(
+        "Harmonic Oscillation with Dampener, Prediction of {} Method Residual".format(
+            set_name), wrap=True)
+    plt.xlabel("time(s)")
+    plt.ylabel("position(m)")
+    chi_sq = plot_residual(t_list, y_data, y_err,
+                           y_list,
+                           set_name, predict_damping_motion_symplectic_euler)
+    plt.savefig("Figs/residual, {}".format(set_name), dpi=600)
+    print(chi_sq)
+
+
+def wave_y(t, zeta, ang_freq, phase, y0, a):
+    return a * np.exp(-zeta * t) * np.cos(ang_freq * t + phase) + y0
 
 
 if __name__ == "__main__":
+    plt.rcParams.update({'font.size': 13})
     # TODO: check params
-    period = 0.720  # second
+    period = 0.7205  # second
     mass = 210  # grams
-    damping_factor = 0.03
+    damping_factor = 0.034
     balanced_position = 0.233
+    y_error = 0.293 / 100
+    v_0 = 0
     spring_constant = spring_const_calc(period, mass)
     print(spring_constant)
 
@@ -67,19 +112,27 @@ if __name__ == "__main__":
                                         unpack=True, skiprows=2, usecols=(0, 1))
     v_data_list = np.loadtxt("SpringMass_velocity_dampener_Oct31_Junyu_Gabrielle.txt",
                              unpack=True, skiprows=2, usecols=1)
-    e_data_list = energy_calculation(y_data_list, v_data_list, spring_constant, mass/1000)
+    e_data_list = energy_calculation(y_data_list, v_data_list, spring_constant, mass / 1000)
     y_data_list = y_data_list / 100
-    plt.figure("position")
-    plot_x_vs_y(time_list, 0, y_data_list, 0, "data", None)
-    # t_y_v_e_list = predict_damping_motion_forward_euler(y_data_list[0], 0, spring_constant, mass / 1000,
-    # damping_factor, time_list) print(t_y_v_e_list) damped_plots(time_list, column_extractor(1, t_y_v_e_list,
-    # time_list), column_extractor(2, t_y_v_e_list, time_list), column_extractor(3, t_y_v_e_list, time_list),
-    # "forward euler")
-    t_y_v_e_list = predict_damping_motion_symplectic_euler(y_data_list[0] - balanced_position, 0, spring_constant,
+    t_y_v_e_list = predict_damping_motion_symplectic_euler(y_data_list[0] - balanced_position, v_0, spring_constant,
                                                            mass / 1000,
                                                            damping_factor,
                                                            time_list)
     damped_plots(time_list, np.array(column_extractor(1, t_y_v_e_list, time_list)) + balanced_position,
                  column_extractor(2, t_y_v_e_list, time_list),
-                 column_extractor(3, t_y_v_e_list, time_list), "symplectic euler")
+                 column_extractor(3, t_y_v_e_list, time_list), y_data_list, y_error, "Symplectic Euler")
+
+    t_y_v_e_list = predict_damping_motion_forward_euler(y_data_list[0], 0, spring_constant, mass / 1000,
+                                                        damping_factor, time_list)
+
+    damped_plots(time_list, np.array(column_extractor(1, t_y_v_e_list, time_list)) + balanced_position,
+                 column_extractor(2, t_y_v_e_list, time_list),
+                 column_extractor(3, t_y_v_e_list, time_list), y_data_list, y_error, "Forward Euler")
+
+    plt.figure("best fit")
+    popt, pcov, prediction = plot_x_vs_y(time_list - 0.530, 0, y_data_list, np.full_like(y_data_list, y_error),
+                                         "best fit",
+                                         wave_y)
+    plt.legend()
+    print(popt)
     plt.show()

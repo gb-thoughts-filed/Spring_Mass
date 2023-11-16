@@ -50,18 +50,20 @@ def plot_x_vs_y(x: Union[ndarray, Iterable, int, float], x_error: Union[ndarray,
     :return: popt, pcov, y-prediction
     """
     plt.errorbar(x, y, xerr=x_error,
-                 yerr=y_error, ls='', lw=1, marker='o', markersize=2,
-                 label="{} data with error bar".format(graph_name))
-    if type(model) == callable:
+                 yerr=y_error, ls='', lw=1, marker='o', markersize=2.5, capsize=1.5, capthick=0.5,
+                 label="{} with error bar".format(graph_name), zorder=0)
+    plt.legend()
+    if model is not None:
         popt, pcov = curve_fit(model, x, y, sigma=y_error, absolute_sigma=True)
         prediction = model(x, *popt)
         plt.plot(x, prediction, label="{} best fit line".format(graph_name))
+        plt.legend()
         return popt, pcov, prediction
 
 
 def plot_residual(x: Union[ndarray, Iterable, int, float], y: Union[ndarray, Iterable, int, float],
                   uncertainty: Union[ndarray, Iterable, int, float], prediction: Union[ndarray, Iterable, int, float],
-                  graph_name: str, model: callable):
+                  graph_name: str, model: Union[callable, None]):
     """
     Plot the residual based on data and the prediction.
     :param model: the theoretical model
@@ -72,11 +74,14 @@ def plot_residual(x: Union[ndarray, Iterable, int, float], y: Union[ndarray, Ite
     :param graph_name: name of the data set
     :return: chi_sq
     """
-    plt.plot(x, np.zeros_like(y), "g--")
-    plt.errorbar(x, y - prediction, yerr=uncertainty, ls='', lw=1, marker='o', markersize=2, capsize=3, capthick=1,
-                 label="{} residual".format(graph_name))
-    chi_sq = characterize_fit(y, prediction, uncertainty, len(inspect.signature(model).parameters) - 1)
-    return chi_sq
+    plt.errorbar(x, y - prediction, yerr=uncertainty, ls='', lw=0.5, marker='o', markersize=2,
+                 capsize=1.5, capthick=0.5, ecolor="grey",
+                 label="{} Residual".format(graph_name))
+    plt.plot(x, np.zeros_like(y), "g-", label="0 line")
+    plt.legend()
+    if model is not None:
+        chi_sq = characterize_fit(y, prediction, uncertainty, len(inspect.signature(model).parameters) - 1)
+        return chi_sq
 
 
 def plot_data_range(data_dict, uncertainty_dict, name):
@@ -129,3 +134,13 @@ def error_prop_addition(uncertainty_list):
     for uncertainty in uncertainty_list:
         square_sum += uncertainty ** 2
     return np.sqrt(square_sum)
+
+
+def plot_directional_graph(x, y, name, num_of_arrows):
+    step = int(np.floor(len(x) / (num_of_arrows + 1)))
+    for i in range(1, num_of_arrows + 1):
+        plt.quiver(x[i * step], y[i * step], x[i * step + 1] - x[i * step], y[i * step + 1] - y[i * step],
+                   scale=1,
+                   angles='xy', scale_units='xy', zorder=2, headwidth=5
+                   )
+    plt.plot(x, y, label=name, zorder=1, linestyle='-', marker='o', markersize=1.5, linewidth=1)
