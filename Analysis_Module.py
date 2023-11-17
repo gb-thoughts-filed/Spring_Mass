@@ -148,3 +148,7 @@ def plot_directional_graph(x, y, name, num_of_arrows):
                    angles='xy', scale_units='xy', zorder=2, headwidth=5
                    )
     plt.plot(x, y, label=name, zorder=1, linestyle='-', marker='o', markersize=1.5, linewidth=1)
+
+
+def error_prop_exponent(variable, uncertainty, product, exponent):
+    return exponent * product * (uncertainty / variable)
