@@ -51,7 +51,7 @@ def plot_x_vs_y(x: Union[ndarray, Iterable, int, float], x_error: Union[ndarray,
     """
     plt.errorbar(x, y, xerr=x_error,
                  yerr=y_error, ls='', lw=1, marker='o', markersize=2.5, capsize=1.5, capthick=0.5,
-                 label="{} with error bar".format(graph_name), zorder=0)
+                 label="{} with error bar".format(graph_name), zorder=0, ecolor="grey")
     plt.legend()
     if model is not None:
         popt, pcov = curve_fit(model, x, y, sigma=y_error, absolute_sigma=True)
